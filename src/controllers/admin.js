@@ -1,5 +1,5 @@
 const model = require("../models/admin");
-const bcrypt = require("bcryptjs");
+const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const randomstring = require("randomstring");
 const excel = require("exceljs");
@@ -68,7 +68,6 @@ module.exports = {
             const isNotActive = await model.isNotActiveModel(adminID);
 
             if(logout) {
-                console.log(randToken)
                 if(isNotActive){
                     res.send({
                         statusMessage: "Logout Admin Success",
@@ -770,8 +769,6 @@ module.exports = {
                 "Concent-Disposition",
                 "attachment; filename=" + "list_product.xlsx"
             );
-
-            console.log(result)
 
             return workbook.xlsx.write(res).then(function () {
                 res.send({
