@@ -102,7 +102,6 @@ module.exports = {
         } = req.body;
 
         try {
-            // Add Data to Table product
             const addToTableProduct = await model.addToTableProductModel({
                 productID,
                 nama_product,
@@ -116,7 +115,7 @@ module.exports = {
                 // Add Data to Table product_image
                 if (typeof req.files["productImage"] !== "undefined" && req.files["productImage"] !== "") {
                     let uploadProductImage = {
-                        productID: addToTableProduct.productID,
+                        productID: addToTableProduct.id,
                         product_image_url: req.files["productImage"] === undefined ? '': `${process.env.URL}/uploads/product_image/` + req.files["productImage"][0].filename
                     }
                     const photo = await model.addToTableProductImageModel(uploadProductImage);
@@ -148,13 +147,13 @@ module.exports = {
 
             if(listProduct) {
                 return res.send({
-                    statusMessage: "Success",
+                    statusMessage: "Success Get Data Product",
                     statusCode: 200,
                     data: { listProduct },
                 });
             } else {
                 return res.send({
-                    statusMessage: "Success",
+                    statusMessage: "Success Get Data Product",
                     statusCode: 200,
                     data: { listProduct },
                 });
@@ -208,10 +207,8 @@ module.exports = {
         const { productID } = req.params;
 
         try {
-            //get data product
             const deleteProduct = await model.deleteDataProductModel(productID);
 
-            //get data product image
             //const deleteProductImage = await model.deleteDataProductImage(productID);
 
             if(deleteProduct){
