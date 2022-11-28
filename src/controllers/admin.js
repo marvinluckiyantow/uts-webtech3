@@ -335,12 +335,8 @@ module.exports = {
             transaksiID,
             nama_user,
             no_handphone,
-            jmlh_pengiriman,
             tgl_pengiriman,
-            deliveryID,
-            metode_pengiriman,
             products,
-            listProductPackage,
             note
         } = req.body;
 
@@ -354,10 +350,7 @@ module.exports = {
                 transaksiID,
                 nama_user,
                 no_handphone,
-                jmlh_pengiriman,
                 tgl_pengiriman,
-                metode_pengiriman,
-                deliveryID,
                 adminID: adminID,
                 transaction_code: transaction_code,
                 note
@@ -377,25 +370,6 @@ module.exports = {
                     });
                 }
             });
-
-            listProductPackage.forEach(async item => {
-                console.log(item)
-                item.product_package_details.forEach(async item_detail => {
-                    await model.addToDetailTransaksiModel({
-                        detail_transaksi_quantity:item_detail.production_quantity,
-                        transaksiID:addToTableTransaksi.id,
-                        product_packageID: item_detail.product_packageID,
-                        productID:item_detail.productID
-                    });
-                    for (var i = 0; i < item_detail.production_quantity; i ++) {
-                        await model.addToProductionQueueModel({
-                            nama_production_queue:item_detail.nama_product,
-                            productID:item_detail.productID,
-                            created_at: new Date()
-                        });
-                    }
-                });
-            })
             
             if(addToTableTransaksi) {
                 res.send({
@@ -421,17 +395,10 @@ module.exports = {
 
     updateConfirmOrderProduct: async(req, res) => {
         const { transaksiID } = req.params;
-        const { jmlh_pengiriman,
-                tgl_pengiriman,
-                metode_pengiriman
-                } = req.body;
+        const { tgl_pengiriman } = req.body;
 
         try {
-            const updateConfirmOrder = await model.updateConfirmOrderProductModel({
-                jmlh_pengiriman,
-                tgl_pengiriman,
-                metode_pengiriman
-            }, transaksiID)
+            const updateConfirmOrder = await model.updateConfirmOrderProductModel({ tgl_pengiriman }, transaksiID)
 
             if (updateConfirmOrder) {
                 res.send({
@@ -512,12 +479,8 @@ module.exports = {
     },
 
     getProductionQueue: async(req, res) => {
-        let { search } = req.query;
-
         try {
-            const productionQueue = await model.getProductionQueueListModel(
-                search
-            );
+            const productionQueue = await model.getProductionQueueListModel();
 
             if(productionQueue) {
                 return res.send({
@@ -682,41 +645,13 @@ module.exports = {
 
     updateOrderDeliveryList: async (req, res) => {
         const { transaksiID } = req.params;
-        const jam_pengiriman = new Date();
 
         try {
-            const addToTableTransaksi = await model.updateOrderDeliveryListModel(transaksiID, jam_pengiriman);
+            const addToTableTransaksi = await model.updateOrderDeliveryListModel(transaksiID);
 
             if(addToTableTransaksi) {
                 res.send({
                     statusMessage: "Update Status Pengiriman Success",
-                    statusCode: 200,
-                });
-            } else {
-                res.send({
-                    statusMessage: "Something Wrong",
-                    statusCode: 400,
-                    data: { isSuccess: false },
-                });
-            }
-        } catch (error) {
-            res.send({
-                statusMessage: error.message,
-                statusCode: 400,
-                data: { isSuccess: false },
-            });
-        }
-    },
-
-    updateOrderReadyToPickup: async (req, res) => {
-        const { transaksiID } = req.params;
-
-        try {
-            const addToTableTransaksi = await model.updateOrderIsReadyToPickupModel(transaksiID);
-
-            if(addToTableTransaksi) {
-                res.send({
-                    statusMessage: "Update Ready to Pickup Success",
                     statusCode: 200,
                 });
             } else {
@@ -749,8 +684,7 @@ module.exports = {
 
             worksheet.columns = [
                 { header: "NAME PRODUCT", key: "nama_product", width: 30 },
-                { header: "PRODUCT QUANTITY", key: "detail_transaksi_quantity", width: 30 },
-                { header: "IS PACKAGE", key: "is_package", width: 30 },
+                { header: "PRODUCT QUANTITY", key: "detail_transaksi_quantity", width: 30 }
             ];
             
             //Add Array Rows

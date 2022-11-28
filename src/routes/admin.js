@@ -16,21 +16,18 @@ router.get("/api/v1/admin/product", authorization, controller.getDataListProduct
 //image
 router.delete("/api/v1/admin/productimage/:productimageID", authorization, controller.deleteProductImage);
 
-//Queue
-router.put("/api/v1/admin/production_queue_limit/:productID/:limit", authorization, controller.updateProductionQueueProgressLimit);
-router.put("/api/v1/admin/production_queue_done/:productID", authorization, controller.updateProductionQueueDone);
-router.get("/api/v1/admin/production_queue", authorization, controller.getProductionQueue);
-router.get("/api/v1/admin/production_queue_not_done",authorization, controller.getProductionQueueNotDone);
-
 //Order
 router.post("/api/v1/admin/order", authorization, controller.addConfirmOrderProduct);
 router.put("/api/v1/admin/order/:transaksiID", authorization, controller.updateConfirmOrderProduct);
 router.get("/api/v1/admin/order", authorization, controller.getOrderDeliveryList);
 router.put("/api/v1/admin/order_done/:transaksiID",authorization, controller.updateOrderDeliveryList);
-router.put("/api/v1/admin/ready_to_pickup/:transaksiID",authorization, controller.updateOrderReadyToPickup);
-router.get("/api/v1/admin/courier", authorization, controller.getCourierList);
 router.get("/api/v1/admin/order_all", authorization, controller.getOrderDeliveryListAll);
 
+//Queue
+router.put("/api/v1/admin/production_queue_limit/:productID/:limit", authorization, controller.updateProductionQueueProgressLimit);
+router.put("/api/v1/admin/production_queue_done/:productID", authorization, controller.updateProductionQueueDone);
+router.get("/api/v1/admin/production_queue", authorization, controller.getProductionQueue);
+router.get("/api/v1/admin/production_queue_not_done",authorization, controller.getProductionQueueNotDone);
 
 //Excel
 router.post("/api/v1/admin/export-to-excel", controller.exportToExcelProduct);

@@ -111,35 +111,6 @@ module.exports = {
             });
         },
     
-        getDataListProductPackageDetailByPakacgeIDModel: (packageId) => {
-            return new Promise((resolve, reject) => {
-                let queryDataProduct = `SELECT * FROM product_package_detail 
-                inner join product on product_package_detail.productID = product.productID 
-                inner join product_image on product_image.productID = product.productID
-                where product_package_detail.product_packageID = ?`;
-                db.query(queryDataProduct, packageId, (error, result) => {
-                    if(error) {
-                        reject(new Error(error));
-                    } else {
-                        resolve(result);
-                    }
-                });
-            });
-        },
-    
-        getDataListProductPackageModel: () => {
-            return new Promise((resolve, reject) => {
-                let queryProductPackage = `SELECT * FROM product_package`;
-                db.query(queryProductPackage, (error, result) => {
-                    if(error) {
-                        reject(new Error(error));
-                    } else {
-                        resolve(result);
-                    }
-                });
-            });
-        },
-    
         addToTableProductImageModel: (setData) => {
             return new Promise((resolve, reject) => {
                 db.query('INSERT INTO product_image SET ?', setData, (error, result) => {
@@ -167,31 +138,33 @@ module.exports = {
                 });
             });
         },
-
-        getCourierListModel: () => {
+        
+        getOrderDeliveryListModel: (tgl_pengiriman) => {
             return new Promise((resolve, reject) => {
-                db.query(`SELECT nama_delivery, deliveryID FROM delivery`, (error, result) => {
+                let queryOrderDeliveryList = `
+                SELECT transaksi.transaksiID, transaksi.nama_user, transaksi.no_handphone, transaksi.tgl_pengiriman, transaksi.status_pengiriman, transaksi.transaction_code, note
+                FROM transaksi
+                WHERE transaksi.status_pengiriman != 'Done' AND transaksi.tgl_pengiriman LIKE '${tgl_pengiriman}%'`;
+                db.query(queryOrderDeliveryList, (error, result) => {
                     if (error) {
                         reject(new Error(error));
                     } else {
                         resolve(result);
                     }
-                })
-            })
+                    console.log(queryOrderDeliveryList)
+                });
+            });
         },
-        
-        getOrderDeliveryListModel: (tgl_pengiriman) => {
+
+        getDetailTransaksiListModel: (transaksiID) => {
             return new Promise((resolve, reject) => {
-                let queryOrderDeliveryList = `
-                SELECT transaksi.transaksiID, transaksi.nama_user, transaksi.no_handphone, 
-                transaksi.metode_pengiriman, transaksi.deliveryID, transaksi.tgl_pengiriman, transaksi.status_pengiriman, transaksi.jam_pengiriman, transaksi.transaction_code, note
-                FROM transaksi
-                INNER JOIN delivery on delivery.deliveryID = transaksi.deliveryID
-                WHERE transaksi.status_pengiriman != 'Done' AND transaksi.tgl_pengiriman LIKE '${tgl_pengiriman}%'
-                ORDER BY delivery.priority
-                ASC`;
-                // ORDER BY FIELD (transaksi.metode_pengiriman, "GOJEK-INSTANT", "GOJEK-SAMEDAY", "Courier", "Lalamove", "Paxel");`;
-                db.query(queryOrderDeliveryList, (error, result) => {
+                let detailTransaksiList = `
+                SELECT detail_transaksi.detail_transaksiID,
+                detail_transaksi.detail_transaksi_quantity as quantity, product.productID, product.nama_product 
+                FROM detail_transaksi 
+                INNER JOIN product ON product.productID = detail_transaksi.productID 
+                WHERE detail_transaksi.transaksiID = ?`;
+                db.query(detailTransaksiList, transaksiID, (error, result) => {
                     if (error) {
                         reject(new Error(error));
                     } else {
@@ -201,7 +174,7 @@ module.exports = {
             });
         },
     
-        getOrderDeliveryListAllModel: (date_from, date_end, status_pengiriman) => {
+        getOrderDeliveryListAllModel: (date_from, date_end) => {
             return new Promise((resolve, reject) => {
                 let queryOrderDeliveryListAllFilter = `
                 SELECT * FROM transaksi`;
@@ -268,30 +241,13 @@ module.exports = {
             });
         },
     
-        getDetailTransaksiListModel: (transaksiID) => {
-            return new Promise((resolve, reject) => {
-                let detailTransaksiList = `
-                SELECT detail_transaksi.detail_transaksiID, detail_transaksi.is_package, product_package.nama_product_package,
-                detail_transaksi.detail_transaksi_quantity as quantity, detail_transaksi.product_packageID, product.productID, product.nama_product 
-                FROM detail_transaksi 
-                INNER JOIN product ON product.productID = detail_transaksi.productID 
-                LEFT JOIN product_package ON detail_transaksi.product_packageID = product_package.product_packageID
-                WHERE detail_transaksi.transaksiID = ?`;
-                db.query(detailTransaksiList, transaksiID, (error, result) => {
-                    if (error) {
-                        reject(new Error(error));
-                    } else {
-                        resolve(result);
-                    }
-                });
-            });
-        },
+
     
         exportToTexcelProductModel: (date_from, date_end) => {
             return new Promise((resolve, reject) => {
-                let queryToExcelProduct = `SELECT transaksi.nama_user, transaksi.no_handphone, transaksi.jmlh_pengiriman, transaksi.tgl_pengiriman, transaksi.metode_pengiriman,
+                let queryToExcelProduct = `SELECT transaksi.nama_user, transaksi.no_handphone, transaksi.tgl_pengiriman,
                 product.nama_product, 
-                detail_transaksi.is_package, detail_transaksi.detail_transaksi_quantity
+                detail_transaksi.detail_transaksi_quantity
                 FROM transaksi
                 INNER JOIN detail_transaksi ON detail_transaksi.transaksiID = transaksi.transaksiID
                 INNER JOIN product ON product.productID =  detail_transaksi.productID;`;
@@ -386,9 +342,9 @@ module.exports = {
             });
         },
     
-        updateOrderDeliveryListModel: (transaksiID, jam_pengiriman) => {
+        updateOrderDeliveryListModel: (transaksiID) => {
             return new Promise((resolve, reject) => {
-                db.query(`UPDATE transaksi SET status_pengiriman = 'Done', jam_pengiriman = ? WHERE transaksiID = '${transaksiID}'`, jam_pengiriman, (error, result) => {
+                db.query(`UPDATE transaksi SET status_pengiriman = 'Done' WHERE transaksiID = '${transaksiID}'`, (error, result) => {
                     if (error) {
                         reject(new Error(error));
                     } else {
@@ -396,326 +352,5 @@ module.exports = {
                     }
                 });
             });
-        },
-    
-        updateOrderIsReadyToPickupModel: (transaksiID) => {
-            return new Promise((resolve, reject) => {
-                db.query(`UPDATE transaksi SET status_pengiriman = 'Ready', ready_to_pickup = 1 WHERE transaksiID = '${transaksiID}'`, (error, result) => {
-                    if (error) {
-                        reject(new Error(error));
-                    } else {
-                        resolve(result);
-                    }
-                });
-            });
-        },
-
-        addConfirmOrderProduct: async (req, res) => {
-            const { adminID } = req.admin;
-            const {
-                transaksiID,
-                nama_user,
-                no_handphone,
-                jmlh_pengiriman,
-                tgl_pengiriman,
-                deliveryID,
-                metode_pengiriman,
-                products,
-                listProductPackage,
-                note
-            } = req.body;
-    
-            const transaction_code = randomstring.generate({
-                length: 5,
-                charset: 'ABCDEFGHIJKLMNOPQRZTUVWQYZ1234567890'
-            })
-            
-            try {
-                const addToTableTransaksi = await model.confirmOrderProduct({
-                    transaksiID,
-                    nama_user,
-                    no_handphone,
-                    jmlh_pengiriman,
-                    tgl_pengiriman,
-                    metode_pengiriman,
-                    deliveryID,
-                    adminID: adminID,
-                    transaction_code: transaction_code,
-                    note
-                });
-    
-                products.forEach(async item => {
-                    await model.addToDetailTransaksiModel({
-                        detail_transaksi_quantity:item.production_quantity,
-                        transaksiID:addToTableTransaksi.id,
-                        productID:item.productID
-                    });
-                    for (var i = 0; i < item.production_quantity; i ++) {
-                        await model.addToProductionQueueModel({
-                            nama_production_queue:item.nama_product,
-                            productID:item.productID,
-                            created_at: new Date()
-                        });
-                    }
-                });
-    
-                listProductPackage.forEach(async item => {
-                    console.log(item)
-                    item.product_package_details.forEach(async item_detail => {
-                        await model.addToDetailTransaksiModel({
-                            detail_transaksi_quantity:item_detail.production_quantity,
-                            transaksiID:addToTableTransaksi.id,
-                            product_packageID: item_detail.product_packageID,
-                            productID:item_detail.productID
-                        });
-                        for (var i = 0; i < item_detail.production_quantity; i ++) {
-                            await model.addToProductionQueueModel({
-                                nama_production_queue:item_detail.nama_product,
-                                productID:item_detail.productID,
-                                created_at: new Date()
-                            });
-                        }
-                    });
-                })
-                
-                if(addToTableTransaksi) {
-                    res.send({
-                        statusMessage: "Add Transaction Success",
-                        statusCode: 200,
-                        });
-                } else {
-                    res.send({
-                        statusMessage: "Something Wrong",
-                        statusCode: 400,
-                        data: { isSuccess: false},
-                    });
-                }
-            } catch (error) {
-                console.log(error);
-                res.send({
-                    statusMessage: error.message,
-                    statusCode: 400,
-                    data: { isSuccess: false }
-                    });
-                }
-            },
-    
-        updateConfirmOrderProduct: async(req, res) => {
-            const { transaksiID } = req.params;
-            const { jmlh_pengiriman,
-                    tgl_pengiriman,
-                    metode_pengiriman
-                    } = req.body;
-    
-            try {
-                const updateConfirmOrder = await model.updateConfirmOrderProductModel({
-                    jmlh_pengiriman,
-                    tgl_pengiriman,
-                    metode_pengiriman
-                }, transaksiID)
-    
-                if (updateConfirmOrder) {
-                    res.send({
-                        statusMessage: "Update Order Success",
-                        statusCode: 200,
-                    });
-                } else {
-                    res.send({
-                        statusMessage: "Something Wrong",
-                        statusCode: 400,
-                        data: { isSuccess: false },
-                    });
-                }
-                } catch (error) {
-                    console.log(error);
-                    res.send({
-                        statusMessage: error.message,
-                        statusCode: 400,
-                        data: { isSuccess: false }
-                        });
-                }
-        },
-    
-        getOrderDeliveryList: async(req, res) => {
-            let { tgl_pengiriman } = req.query;
-    
-            tgl_pengiriman = typeof tgl_pengiriman == 'undefined' ? '': tgl_pengiriman
-    
-            try {
-                const orderDeliveryList = await model.getOrderDeliveryListModel(
-                    tgl_pengiriman
-                );
-                const result = await Promise.all(
-                    orderDeliveryList.map(async (item) => {
-                        return {
-                            ...item,
-                            products: await model.getDetailTransaksiListModel(item.transaksiID)
-                        }
-                    })
-                )
-    
-                if(orderDeliveryList) {
-                    return res.send({
-                        statusMessage: "Get Order Delivery List Success",
-                        statusCode: 200,
-                        data: { result }
-                    });
-                } else {
-                    return res.send({
-                        statusMessage: "Get Order Delivery List Success",
-                        statusCode: 200,
-                        data: { result }
-                    });
-                }
-            } catch (error) {
-                res.send({
-                    statusMessage: error.message,
-                    statusCode: 400,
-                    data: { isSuccess: false },
-                });
-            }
-        },
-    
-        getOrderDeliveryListAll: async(req, res) => {
-            let { date_from, date_end } = req.query;
-    
-            try {
-                const orderDeliveryListAll = await model.getOrderDeliveryListAllModel(
-                    date_from,
-                    date_end
-                );
-                const result = await Promise.all(
-                    orderDeliveryListAll.map(async (item) => {
-                        return {
-                            ...item,
-                            products: await model.getDetailTransaksiListModel(item.transaksiID)
-                        }
-                    })
-                )
-    
-                if(orderDeliveryListAll) {
-                    return res.send({
-                        statusMessage: "Get Order Delivery List Success",
-                        statusCode: 200,
-                        data: { result }
-                    });
-                } else {
-                    return res.send({
-                        statusMessage: "Get Order Delivery List Success",
-                        statusCode: 200,
-                        data: { result }
-                    });
-                }
-            } catch (error) {
-                res.send({
-                    statusMessage: error.message,
-                    statusCode: 400,
-                    data: { isSuccess: false },
-                });
-            }
-        },
-    
-        updateOrderDeliveryList: async (req, res) => {
-            const { transaksiID } = req.params;
-            const jam_pengiriman = new Date();
-    
-            try {
-                const addToTableTransaksi = await model.updateOrderDeliveryListModel(transaksiID, jam_pengiriman);
-    
-                if(addToTableTransaksi) {
-                    res.send({
-                        statusMessage: "Update Status Pengiriman Success",
-                        statusCode: 200,
-                    });
-                } else {
-                    res.send({
-                        statusMessage: "Something Wrong",
-                        statusCode: 400,
-                        data: { isSuccess: false },
-                    });
-                }
-            } catch (error) {
-                res.send({
-                    statusMessage: error.message,
-                    statusCode: 400,
-                    data: { isSuccess: false },
-                });
-            }
-        },
-    
-        updateOrderReadyToPickup: async (req, res) => {
-            const { transaksiID } = req.params;
-    
-            try {
-                const addToTableTransaksi = await model.updateOrderIsReadyToPickupModel(transaksiID);
-    
-                if(addToTableTransaksi) {
-                    res.send({
-                        statusMessage: "Update Ready to Pickup Success",
-                        statusCode: 200,
-                    });
-                } else {
-                    res.send({
-                        statusMessage: "Something Wrong",
-                        statusCode: 400,
-                        data: { isSuccess: false },
-                    });
-                }
-            } catch (error) {
-                res.send({
-                    statusMessage: error.message,
-                    statusCode: 400,
-                    data: { isSuccess: false },
-                });
-            }
-        },
-    
-        exportToExcelProduct: async (req, res) => {
-            const { date_from, date_end } = req.query;
-    
-            try {
-                const result = await model.exportToTexcelProductModel(
-                    date_from,
-                    date_end
-                );
-    
-                let workbook = new excel.Workbook();
-                let worksheet = workbook.addWorksheet("Excel List Product");
-    
-                worksheet.columns = [
-                    { header: "NAME PRODUCT", key: "nama_product", width: 30 },
-                    { header: "PRODUCT QUANTITY", key: "detail_transaksi_quantity", width: 30 },
-                    { header: "IS PACKAGE", key: "is_package", width: 30 },
-                ];
-                
-                //Add Array Rows
-                worksheet.addRows(result);
-    
-                // res is a Stream object
-                res.setHeader(
-                    "Content-Type",
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                );
-    
-                res.setHeader(
-                    "Concent-Disposition",
-                    "attachment; filename=" + "list_product.xlsx"
-                );
-    
-                console.log(result)
-    
-                return workbook.xlsx.write(res).then(function () {
-                    res.send({
-                        statusMessage: "Success",
-                        statusCode: 200,
-                    });
-                });
-            } catch (error) {
-                res.send({
-                    statusMessage: error.message,
-                    statusCode: 400,
-                    data: { isSuccess: false },
-                });
-            }
         },
 }
